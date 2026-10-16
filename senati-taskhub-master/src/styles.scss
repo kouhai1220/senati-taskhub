@@ -1,0 +1,4 @@
+// Aplica la apariencia básica de toda la aplicación y respeta la preferencia del usuario de reducir el movimiento.
+
+
+html{scroll-behavior:smooth;scroll-padding-top:24px}body{margin:0;background:#f1f7fc;font-family:'Segoe UI',Arial,sans-serif}button,input,select,textarea{font:inherit}[hidden]{display:none!important}@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}

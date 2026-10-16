@@ -1,0 +1,65 @@
+<!-- Muestra la marca, el estado de conexión y el botón para ir al acceso. -->
+<header class="cabecera">
+  <div class="marca"><span class="marca-icono" aria-hidden="true">S</span><div><h1>SENATI | TaskHub</h1><p>Organiza · Colabora · Avanza</p></div></div>
+  <div class="acciones-cabecera">
+    <span class="conexion" [class.sin-conexion]="!online" role="status"><span class="punto" aria-hidden="true"></span>{{ online ? 'Conectado' : 'Sin conexión' }}</span>
+    <button *ngIf="!mostrandoAcceso" class="boton-acceso" type="button" (click)="mostrandoAcceso = true">Iniciar sesión</button>
+  </div>
+</header>
+
+<!-- Presenta la pantalla de acceso y permite continuar al panel local. -->
+<app-acceso *ngIf="mostrandoAcceso" (entrar)="mostrandoAcceso = false"></app-acceso>
+
+<!-- El panel se oculta mientras se muestra el acceso, conservando los datos escritos. -->
+<main [hidden]="mostrandoAcceso">
+
+  <!-- Menú para ir a las tareas, al formulario o al historial de avances. -->
+  <nav class="navegacion" aria-label="Navegación principal"><a href="#tareas-titulo">Mis tareas</a><a href="#entrega-titulo">Registrar avance</a><a href="#avances-titulo">Avances guardados</a></nav>
+  <div class="introduccion"><p class="etiqueta">MI ESPACIO DE APRENDIZAJE</p><h2>Hola, estudiante</h2><p>Aquí tienes tus tareas pendientes. ¡Sigamos avanzando!</p></div>
+  <div *ngIf="!online" class="mensaje error" role="status"><strong>Sin conexión</strong><br>Tu trabajo se guarda localmente. Puedes continuar registrando tus avances.</div>
+
+  <!-- Resumen con el total de tareas, las pendientes y las completadas. -->
+  <section class="resumen" aria-label="Resumen de tareas">
+    <article class="metrica"><span class="icono" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 3h6v4H9zM9 12h6M9 16h4"/></svg></span><div><span>Tareas totales</span><strong>{{ listaTareas.length }}</strong></div></article>
+    <article class="metrica"><span class="icono ambar" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><div><span>Pendientes</span><strong>{{ tareasPendientes }}</strong></div></article>
+    <article class="metrica"><span class="icono verde" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg></span><div><span>Completadas</span><strong>{{ tareasCompletadas }}</strong></div></article>
+  </section>
+  <div class="contenido">
+    <section class="catalogo" aria-labelledby="tareas-titulo">
+      <div class="seccion-titulo"><div><h2 id="tareas-titulo">Tareas asignadas</h2><p>Tu agenda de aprendizaje</p></div><span class="contador">{{ listaTareas.length }}</span></div>
+      <p *ngIf="errorCatalogo" class="mensaje error" role="alert">{{ errorCatalogo }}</p>
+
+      <!-- Lista de tareas con su curso, estado, instructor y fecha de entrega. -->
+      <ul class="tareas"><li *ngFor="let tarea of listaTareas">
+        <div class="tarea-encabezado"><span class="curso">{{ tarea.curso }}</span><span class="estado" [class.completada]="tarea.estado === 'Completado'">{{ tarea.estado }}</span></div>
+        <h3>{{ tarea.titulo }}</h3>
+        <p class="instructor">{{ tarea.instructor }}</p>
+        <div class="fecha"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 11h18"/></svg><span>Entrega <strong>{{ tarea.fechaEntrega | date:'dd/MM/yyyy' }}</strong></span></div>
+      </li></ul>
+
+    </section>
+    <section class="panel formulario" aria-labelledby="entrega-titulo">
+      <span class="icono" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M14 4H5v16h14v-9M10 14l1-4 8-8 3 3-8 8-4 1Z"/></svg></span>
+      <h2 id="entrega-titulo">Registra tu avance</h2><p class="subtitulo">Cada paso cuenta. Guarda lo que has trabajado.</p>
+
+      <!-- Formulario para elegir una tarea y guardar un comentario sobre el avance. -->
+      <form (ngSubmit)="enviarEntrega()" [attr.aria-busy]="guardando">
+        <label for="tarea">Tarea académica</label><select id="tarea" name="tarea" [(ngModel)]="tareaSeleccionadaId" required><option [ngValue]="null" disabled>Selecciona una tarea</option><option *ngFor="let tarea of listaTareas" [ngValue]="tarea.id">{{ tarea.titulo }}</option></select>
+        <label for="comentario">Avance o comentario</label><textarea id="comentario" name="comentario" rows="5" [(ngModel)]="comentarioEntrega" required placeholder="Describe tu progreso, resultados u observaciones..."></textarea>
+        <button type="submit" [disabled]="guardando || !tareaSeleccionadaId || !comentarioEntrega.trim()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h12l4 4v14H3V3h2Zm2 0v6h10V3M7 21v-8h10v8"/></svg>{{ guardando ? 'Guardando...' : 'Guardar avance' }}</button>
+      </form>
+      <p class="aviso">Guardado local en este dispositivo. Las entregas permanecen pendientes de sincronización; no hay un servidor configurado.</p>
+      <p *ngIf="notificacionMensaje" class="notificacion mensaje" [class.exito]="tipoNotificacion === 'exito'" [class.error]="tipoNotificacion === 'error'" [attr.role]="tipoNotificacion === 'error' ? 'alert' : 'status'">{{ notificacionMensaje }}</p>
+    </section>
+  </div>
+  
+  <!-- Historial de avances guardados en el dispositivo, con mensajes de carga, error o lista vacía. -->
+  <section class="panel historial" aria-labelledby="avances-titulo">
+    <div class="seccion-titulo"><div><h2 id="avances-titulo">Avances guardados</h2><p>Tu trabajo se conserva en este dispositivo.</p></div><span class="contador">{{ avancesGuardados.length }}</span></div>
+    <p *ngIf="errorAvances" class="mensaje error" role="alert">{{ errorAvances }}</p>
+    <p *ngIf="cargandoAvances" class="vacio" role="status">Cargando avances...</p>
+    <div *ngIf="!cargandoAvances && !errorAvances && !avancesGuardados.length" class="vacio"><span class="icono" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4zM8 9h8M8 14h5"/></svg></span><h3>Aquí verás tu progreso</h3><p>Registra tu primer avance usando el formulario.</p></div>
+    <ol class="avances" *ngIf="avancesGuardados.length"><li *ngFor="let avance of avancesGuardados"><div class="avance-meta"><span class="estado">Pendiente de sincronización</span><time [attr.datetime]="avance.fechaRegistro">{{ avance.fechaRegistro | date:'dd/MM/yyyy · HH:mm' }}</time></div><h3>{{ tituloTarea(avance.tareaId) }}</h3><p class="comentario">{{ avance.comentario }}</p><p class="autor">{{ avance.usuario }} · Registro #{{ avance.id }}</p></li></ol>
+  </section>
+</main>
+<footer class="pie-institucional"><strong>SENATI · TaskHub</strong><span>Tu talento también forma parte del futuro.</span></footer>
